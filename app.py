@@ -21,7 +21,7 @@ def index():
         nom_encode = base64.b64encode(nom.encode('utf-8')).decode('utf-8')
         prenom_encode = base64.b64encode(prenom.encode('utf-8')).decode('utf-8')
         
-        lien_candidat = f"https://vercel.app{nom_encode}&p={prenom_encode}"
+        lien_candidat = f"https://generateur-qr-5txl.vercel.app/candidat?n={nom_encode}&p={prenom_encode}"
         
         # Génération du QR Code en mémoire vive
         qr = qrcode.QRCode(version=1, box_size=10, border=5)
