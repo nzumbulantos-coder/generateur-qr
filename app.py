@@ -1,73 +1,54 @@
-from flask import Flask, render_template, request, redirect
-import psycopg2
-from psycopg2.extras import RealDictCursor
+from flask import Flask, render_template, request, render_template_string
 import qrcode
-import os
+import io
+import base64
 
 app = Flask(__name__)
 
-# On récupère proprement la configuration de la base de données depuis l'environnement
-DATABASE_URL = os.environ.get('DATABASE_URL')
-
-def get_db_connection():
-    if not DATABASE_URL:
-        # En local ou si la variable n'est pas définie, on utilise par défaut le pooler Supabase
-        return psycopg2.connect("postgresql://postgres:lvjj@://supabase.com")
-    return psycopg2.connect(DATABASE_URL)
-
-# 1. Page d'accueil : Formulaire d'ajout et liste des candidats
+# 1. Page d'accueil : Formulaire simple
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    conn = get_db_connection()
-    cursor = conn.cursor(cursor_factory=RealDictCursor)
-
+    qr_base64 = None
+    nom_complet = None
+    
     if request.method == 'POST':
         nom = request.form['nom'].upper()
         prenom = request.form['prenom'].upper()
+        nom_complet = f"{nom} {prenom}"
         
-        # Insertion dans Supabase et récupération immédiate de l'ID généré
-        cursor.execute("INSERT INTO candidats (nom, prenom) VALUES (%s, %s) RETURNING id;", (nom, prenom))
-        id_candidat = cursor.fetchone()['id']
-        conn.commit()
-
-        # Génération automatique du QR Code unique pointant vers votre lien Vercel
-        lien_candidat = f"https://vercel.app{id_candidat}"
+        # On encode les informations du candidat directement dans l'URL du QR code !
+        # Plus besoin de base de données pour se souvenir de lui.
+        nom_encode = base64.b64encode(nom.encode('utf-8')).decode('utf-8')
+        prenom_encode = base64.b64encode(prenom.encode('utf-8')).decode('utf-8')
         
+        lien_candidat = f"https://vercel.app{nom_encode}&p={prenom_encode}"
+        
+        # Génération du QR Code en mémoire vive
         qr = qrcode.QRCode(version=1, box_size=10, border=5)
         qr.add_data(lien_candidat)
         qr.make(fit=True)
         img = qr.make_image(fill_color="black", back_color="white")
         
-        # Sauvegarde du QR code dans le dossier static
-        if not os.path.exists('static'):
-            os.makedirs('static')
-        img.save(f"static/qr_{id_candidat}.png")
+        # Transformation de l'image en texte affichable instantanément sur la page
+        buf = io.BytesIO()
+        img.save(buf, format='PNG')
+        qr_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
 
-        cursor.close()
-        conn.close()
-        return redirect('/')
+    return render_template('formulaire.html', qr_base64=qr_base64, nom_complet=nom_complet)
 
-    # Récupération de tous les candidats pour les afficher dans le tableau
-    cursor.execute("SELECT id, nom, prenom FROM candidats ORDER BY id DESC;")
-    candidats = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    
-    return render_template('formulaire.html', candidats=candidats)
-
-# 2. Page affichée lors du scan du QR Code par un smartphone
-@app.route('/candidat/<int:id_candidat>')
-def afficher_candidat(id_candidat):
-    conn = get_db_connection()
-    cursor = conn.cursor(cursor_factory=RealDictCursor)
-    cursor.execute("SELECT nom, prenom FROM candidats WHERE id = %s;", (id_candidat,))
-    candidat = cursor.fetchone()
-    cursor.close()
-    conn.close()
-
-    if candidat:
-        return render_template('candidat.html', nom=candidat['nom'], prenom=candidat['prenom'])
-    return "Candidat introuvable", 404
+# 2. Page affichée lors du scan du QR Code (Décodage des infos en direct)
+@app.route('/candidat')
+def afficher_candidat():
+    try:
+        nom_encode = request.args.get('n', '')
+        prenom_encode = request.args.get('p', '')
+        
+        nom = base64.b64decode(nom_encode.encode('utf-8')).decode('utf-8')
+        prenom = base64.b64decode(prenom_encode.encode('utf-8')).decode('utf-8')
+        
+        return render_template('candidat.html', nom=nom, prenom=prenom)
+    except Exception:
+        return "Informations du candidat invalides ou corrompues", 400
 
 if __name__ == '__main__':
     app.run(debug=True, port=8080)
