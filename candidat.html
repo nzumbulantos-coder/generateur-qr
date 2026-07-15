@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Félicitations</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #ffffff; }
+        .container { text-align: left; max-width: 600px; padding: 20px; }
+        .header-row { display: flex; align-items: center; gap: 15px; margin-bottom: 5px; }
+        h1 { font-size: 3.5rem; color: #212529; margin: 0; font-weight: 700; }
+        .emoji { font-size: 3rem; }
+        .emoji-row { display: flex; gap: 15px; margin-bottom: 30px; margin-left: 5px; }
+        .name-container { font-size: 3.2rem; font-weight: 700; color: #1d70b8; line-height: 1.2; }
+        .first-name { margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header-row">
+            <h1>Félicitations</h1>
+            <span class="emoji">🎉</span>
+        </div>
+        <div class="emoji-row">
+            <span class="emoji">🎉</span>
+            <span class="emoji">🎉</span>
+        </div>
+        <div class="name-container">
+            <div>{{ nom }}</div>
+            <div class="first-name">{{ prenom }}</div>
+        </div>
+    </div>
+
+</body>
+</html>
