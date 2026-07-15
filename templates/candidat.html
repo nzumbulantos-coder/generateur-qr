@@ -2,17 +2,69 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <!-- Cette ligne essentielle force la page à s'adapter à la taille de l'écran du téléphone -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Félicitations</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #ffffff; }
-        .container { text-align: left; max-width: 600px; padding: 20px; }
-        .header-row { display: flex; align-items: center; gap: 15px; margin-bottom: 5px; }
-        h1 { font-size: 3.5rem; color: #212529; margin: 0; font-weight: 700; }
-        .emoji { font-size: 3rem; }
-        .emoji-row { display: flex; gap: 15px; margin-bottom: 30px; margin-left: 5px; }
-        .name-container { font-size: 3.2rem; font-weight: 700; color: #1d70b8; line-height: 1.2; }
-        .first-name { margin-top: 15px; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+            background-color: #ffffff; 
+        }
+        .container { 
+            text-align: left; 
+            max-width: 600px; 
+            width: 100%;
+            padding: 20px; 
+            box-sizing: border-box; /* Intègre le padding dans le calcul de la largeur */
+        }
+        .header-row { 
+            display: flex; 
+            align-items: center; 
+            gap: 15px; 
+            margin-bottom: 5px; 
+            flex-wrap: wrap; /* Permet à l'emoji d'aller à la ligne si l'écran est minuscule */
+        }
+        h1 { 
+            font-size: 3.5rem; 
+            color: #212529; 
+            margin: 0; 
+            font-weight: 700; 
+            max-width: 100%;
+        }
+        .emoji { 
+            font-size: 3rem; 
+        }
+        .emoji-row { 
+            display: flex; 
+            gap: 15px; 
+            margin-bottom: 30px; 
+            margin-left: 5px; 
+        }
+        .name-container { 
+            font-size: 3.2rem; 
+            font-weight: 700; 
+            color: #1d70b8; 
+            line-height: 1.2; 
+            max-width: 90vw; /* Limite la zone de texte à 90% de la largeur de l'écran */
+            word-wrap: break-word; /* Force le nom à aller à la ligne s'il est trop long */
+            overflow-wrap: break-word;
+            text-transform: uppercase;
+        }
+        .first-name { 
+            margin-top: 15px; 
+        }
+
+        /* Ajustement spécial pour les téléphones (écrans de moins de 500px) */
+        @media (max-width: 500px) {
+            h1 { font-size: 2.5rem; }
+            .emoji { font-size: 2.2rem; }
+            .name-container { font-size: 2.2rem; }
+        }
     </style>
 </head>
 <body>
