@@ -59,7 +59,7 @@
             margin-top: 15px; 
         }
         
-        /* Bouton officiel de téléchargement du fichier PDF physique */
+        /* Bouton dynamique de téléchargement sécurisé */
         .download-pdf-btn {
             display: inline-flex;
             align-items: center;
@@ -75,7 +75,7 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.15);
             transition: background 0.2s;
             width: 100%;
-            max-width: 420px;
+            max-width: 440px;
             box-sizing: border-box;
         }
         .download-pdf-btn:active {
@@ -106,8 +106,8 @@
             <div class="first-name">{{ prenom }}</div>
         </div>
 
-        <!-- Bouton de téléchargement direct du document PDF physique -->
-        <a href="/static/attestation_furaha.pdf" class="download-pdf-btn" download="Attestation_Officielle.pdf">
+        <!-- Appel dynamique de la fonction de téléchargement forcé -->
+        <a href="/telecharger-pdf/{{ nom }}_{{ prenom }}.pdf" class="download-pdf-btn">
             📄 Télécharger mon Attestation (Fichier PDF)
         </a>
     </div>
