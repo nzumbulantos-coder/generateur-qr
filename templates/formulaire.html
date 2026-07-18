@@ -2,38 +2,43 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Générateur de QR Code</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Félicitations</title>
     <style>
-        body { font-family: sans-serif; margin: 40px; background: #f4f6f9; display: flex; flex-direction: column; align-items: center; }
-        .box { background: white; padding: 30px; border-radius: 8px; width: 400px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-align: left; }
-        input[type="text"] { width: 95%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; }
-        button { background: #1d70b8; color: white; padding: 12px 15px; border: none; cursor: pointer; width: 100%; border-radius: 4px; font-weight: bold; }
-        .result-box { margin-top: 25px; text-align: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); width: 420px; }
-        .qr-img { width: 250px; height: 250px; margin-top: 15px; }
-        .download-btn { display: inline-block; margin-top: 15px; background: #28a745; color: white; padding: 10px 15px; text-decoration: none; border-radius: 4px; font-weight: bold; }
+        body { font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #ffffff; }
+        .container { text-align: left; max-width: 600px; width: 100%; padding: 20px; box-sizing: border-box; }
+        .header-row { display: flex; align-items: center; gap: 15px; margin-bottom: 5px; flex-wrap: wrap; }
+        h1 { font-size: 3.5rem; color: #212529; margin: 0; font-weight: 700; max-width: 100%; }
+        .emoji { font-size: 3rem; }
+        .emoji-row { display: flex; gap: 15px; margin-bottom: 30px; margin-left: 5px; }
+        .name-container { font-size: 3.2rem; font-weight: 700; color: #1d70b8; line-height: 1.2; max-width: 90vw; word-wrap: break-word; overflow-wrap: break-word; text-transform: uppercase; margin-bottom: 40px; }
+        .first-name { margin-top: 15px; }
+        .download-pdf-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; background-color: #ff5722; color: white; text-decoration: none; padding: 15px 25px; font-size: 1.2rem; font-weight: bold; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.15); transition: background 0.2s; width: 100%; max-width: 440px; box-sizing: border-box; }
+        .download-pdf-btn:active { background-color: #e64a19; }
+        @media (max-width: 500px) { h1 { font-size: 2.5rem; } .emoji { font-size: 2.2rem; } .name-container { font-size: 2.2rem; } .download-pdf-btn { font-size: 1.05rem; padding: 12px 20px; } }
     </style>
 </head>
 <body>
 
-    <div class="box">
-        <h2>Générer un QR Code</h2>
-        <form method="POST">
-            <label>Nom du candidat :</label>
-            <input type="text" name="nom" required placeholder="Ex: MALEKANI">
-            <label>Prénom du candidat :</label>
-            <input type="text" name="prenom" required placeholder="Ex: BYALENGA JACQUES">
-            <button type="submit">Créer le QR Code immédiatement</button>
-        </form>
-    </div>
+    <div class="container">
+        <div class="header-row">
+            <h1>Félicitations</h1>
+            <span class="emoji">🎉</span>
+        </div>
+        <div class="emoji-row">
+            <span class="emoji">🎉</span>
+            <span class="emoji">🎉</span>
+        </div>
+        <div class="name-container">
+            <div>{{ nom }}</div>
+            <div class="first-name">{{ prenom }}</div>
+        </div>
 
-    {% if qr_base64 %}
-    <div class="result-box">
-        <h3>QR Code généré pour :<br><span style="color:#1d70b8;">{{ nom_complet }}</span></h3>
-        <img class="qr-img" src="data:image/png;base64,{{ qr_base64 }}" alt="QR Code">
-        <br>
-        <a class="download-btn" href="data:image/png;base64,{{ qr_base64 }}" download="QR_{{ nom_complet }}.png">Télécharger le QR Code</a>
+        <!-- Lien de téléchargement dynamique sécurisé -->
+        <a href="/telecharger-pdf/{{ nom }} {{ prenom }}.pdf" class="download-pdf-btn">
+            📄 Télécharger mon Attestation (Fichier PDF)
+        </a>
     </div>
-    {% endif %}
 
 </body>
 </html>
