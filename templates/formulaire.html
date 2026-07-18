@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Générateur de QR Code</title>
+    <style>
+        body { font-family: sans-serif; margin: 40px; background: #f4f6f9; display: flex; flex-direction: column; align-items: center; }
+        .box { background: white; padding: 30px; border-radius: 8px; width: 400px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-align: left; }
+        input[type="text"] { width: 95%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #1d70b8; color: white; padding: 12px 15px; border: none; cursor: pointer; width: 100%; border-radius: 4px; font-weight: bold; }
+        .result-box { margin-top: 25px; text-align: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); width: 420px; }
+        .qr-img { width: 250px; height: 250px; margin-top: 15px; }
+        .download-btn { display: inline-block; margin-top: 15px; background: #28a745; color: white; padding: 10px 15px; text-decoration: none; border-radius: 4px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="box">
+        <h2>Générer un QR Code</h2>
+        <form method="POST">
+            <label>Nom du candidat :</label>
+            <input type="text" name="nom" required placeholder="Ex: MALEKANI">
+            <label>Prénom du candidat :</label>
+            <input type="text" name="prenom" required placeholder="Ex: BYALENGA JACQUES">
+            <button type="submit">Créer le QR Code immédiatement</button>
+        </form>
+    </div>
+
+    {% if qr_base64 %}
+    <div class="result-box">
+        <h3>QR Code généré pour :<br><span style="color:#1d70b8;">{{ nom_complet }}</span></h3>
+        <img class="qr-img" src="data:image/png;base64,{{ qr_base64 }}" alt="QR Code">
+        <br>
+        <a class="download-btn" href="data:image/png;base64,{{ qr_base64 }}" download="QR_{{ nom_complet }}.png">Télécharger le QR Code</a>
+    </div>
+    {% endif %}
+
+</body>
+</html>
