@@ -1,7 +1,8 @@
-from flask import Flask, render_template, request, render_template_string
+from flask import Flask, render_template, request, send_from_directory
 import qrcode
 import io
 import base64
+import urllib.parse
 
 app = Flask(__name__)
 
@@ -12,31 +13,29 @@ def index():
     nom_complet = None
     
     if request.method == 'POST':
-        nom = request.form['nom'].upper()
-        prenom = request.form['prenom'].upper()
+        nom = request.form['nom'].upper().strip()
+        prenom = request.form['prenom'].upper().strip()
         nom_complet = f"{nom} {prenom}"
         
-        # On encode les informations du candidat directement dans l'URL du QR code !
-        # Plus besoin de base de données pour se souvenir de lui.
+        # Encodage sécurisé des informations du candidat
         nom_encode = base64.b64encode(nom.encode('utf-8')).decode('utf-8')
         prenom_encode = base64.b64encode(prenom.encode('utf-8')).decode('utf-8')
         
-        lien_candidat = f"https://generateur-qr-5txl.vercel.app/candidat?n={nom_encode}&p={prenom_encode}"
+        lien_candidat = f"https://vercel.app{nom_encode}&p={prenom_encode}"
         
-        # Génération du QR Code en mémoire vive
+        # Génération du QR Code
         qr = qrcode.QRCode(version=1, box_size=10, border=5)
         qr.add_data(lien_candidat)
         qr.make(fit=True)
         img = qr.make_image(fill_color="black", back_color="white")
         
-        # Transformation de l'image en texte affichable instantanément sur la page
         buf = io.BytesIO()
         img.save(buf, format='PNG')
         qr_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
 
     return render_template('formulaire.html', qr_base64=qr_base64, nom_complet=nom_complet)
 
-# 2. Page affichée lors du scan du QR Code (Décodage des infos en direct)
+# 2. Page affichée lors du scan du QR Code
 @app.route('/candidat')
 def afficher_candidat():
     try:
@@ -49,6 +48,16 @@ def afficher_candidat():
         return render_template('candidat.html', nom=nom, prenom=prenom)
     except Exception:
         return "Informations du candidat invalides ou corrompues", 400
+
+# 3. Téléchargement intelligent (Nettoie les espaces internet pour trouver le PDF physique)
+@app.route('/telecharger-pdf/<path:filename>')
+def download_file(filename):
+    try:
+        # Décodage des caractères spéciaux internet (comme %20) en espaces normaux
+        clean_filename = urllib.parse.unquote(filename).strip()
+        return send_from_directory('static', clean_filename, as_attachment=True)
+    except Exception:
+        return "Le fichier d'attestation demandé est introuvable sur le serveur.", 404
 
 if __name__ == '__main__':
     app.run(debug=True, port=8080)
