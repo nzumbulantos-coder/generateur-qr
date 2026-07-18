@@ -59,7 +59,7 @@
             margin-top: 15px; 
         }
         
-        /* Bouton dynamique de téléchargement sécurisé */
+        /* Bouton officiel de téléchargement */
         .download-pdf-btn {
             display: inline-flex;
             align-items: center;
@@ -106,8 +106,11 @@
             <div class="first-name">{{ prenom }}</div>
         </div>
 
-                <!-- Appel dynamique simplifié avec un espace normal entre le nom et le prénom -->
+        <!-- Ce code magique prend le Nom et le Prénom, recrée l'espace exact, et trouve votre fichier PDF -->
         <a href="/telecharger-pdf/{{ nom }} {{ prenom }}.pdf" class="download-pdf-btn">
             📄 Télécharger mon Attestation (Fichier PDF)
         </a>
+    </div>
 
+</body>
+</html>
