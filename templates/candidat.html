@@ -106,11 +106,8 @@
             <div class="first-name">{{ prenom }}</div>
         </div>
 
-        <!-- Appel dynamique de la fonction de téléchargement forcé -->
-        <a href="/telecharger-pdf/{{ nom }}_{{ prenom }}.pdf" class="download-pdf-btn">
+                <!-- Appel dynamique simplifié avec un espace normal entre le nom et le prénom -->
+        <a href="/telecharger-pdf/{{ nom }} {{ prenom }}.pdf" class="download-pdf-btn">
             📄 Télécharger mon Attestation (Fichier PDF)
         </a>
-    </div>
 
-</body>
-</html>
