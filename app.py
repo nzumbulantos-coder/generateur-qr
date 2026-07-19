@@ -3,6 +3,7 @@ import qrcode
 import io
 import base64
 import urllib.parse
+import os
 
 app = Flask(__name__)
 
@@ -49,19 +50,27 @@ def afficher_candidat():
     except Exception:
         return "Informations du candidat invalides ou corrompues", 400
 
-# 3. Téléchargement intelligent (Nettoie les espaces et supprime les accents automatiquement)
+# 3. Téléchargement intelligent (Compatible avec tous vos fichiers avec ou sans espaces/accents)
 @app.route('/telecharger-pdf/<path:filename>')
 def download_file(filename):
+    # 1. Décodage et nettoyage initial du nom demandé par le téléphone
+    clean_filename = urllib.parse.unquote(filename).strip()
+    clean_filename = clean_filename.replace('É', 'E')
+    
+    # 2. On essaie d'abord de chercher le fichier tel quel (avec ses espaces normaux)
     try:
-        # Décodage des caractères spéciaux internet (comme %20)
-        clean_filename = urllib.parse.unquote(filename).strip()
-        
-        # Remplacement automatique du É accentué par un E normal pour correspondre au titre du fichier
-        clean_filename = clean_filename.replace('É', 'E')
-        
         return send_from_directory('static', clean_filename, as_attachment=True)
     except Exception:
-        return "Le fichier d'attestation demandé est introuvable sur le serveur.", 404
+        # 3. Si le fichier avec espaces n'est pas trouvé, on tente la méthode sans aucun espace !
+        try:
+            # On cherche dans le dossier static un fichier qui correspond en ignorant les espaces
+            sans_espace_demande = clean_filename.replace(' ', '')
+            for fichier_reel in os.listdir('static'):
+                if fichier_reel.replace(' ', '') == sans_espace_demande:
+                    return send_from_directory('static', fichier_reel, as_attachment=True)
+            raise FileNotFoundError
+        except Exception:
+            return "Le fichier d'attestation demandé est introuvable sur le serveur.", 404
 
 if __name__ == '__main__':
     app.run(debug=True, port=8080)
