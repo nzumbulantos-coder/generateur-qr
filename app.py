@@ -49,12 +49,16 @@ def afficher_candidat():
     except Exception:
         return "Informations du candidat invalides ou corrompues", 400
 
-# 3. Téléchargement intelligent (Nettoie les espaces internet pour trouver le PDF physique)
+# 3. Téléchargement intelligent (Nettoie les espaces et supprime les accents automatiquement)
 @app.route('/telecharger-pdf/<path:filename>')
 def download_file(filename):
     try:
-        # Décodage des caractères spéciaux internet (comme %20) en espaces normaux
+        # Décodage des caractères spéciaux internet (comme %20)
         clean_filename = urllib.parse.unquote(filename).strip()
+        
+        # Remplacement automatique du É accentué par un E normal pour correspondre au titre du fichier
+        clean_filename = clean_filename.replace('É', 'E')
+        
         return send_from_directory('static', clean_filename, as_attachment=True)
     except Exception:
         return "Le fichier d'attestation demandé est introuvable sur le serveur.", 404
