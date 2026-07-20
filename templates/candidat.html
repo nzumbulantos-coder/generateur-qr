@@ -77,6 +77,7 @@
             width: 100%;
             max-width: 440px;
             box-sizing: border-box;
+            border: none;
             cursor: pointer;
         }
         .download-pdf-btn:active {
@@ -107,18 +108,41 @@
             <div class="first-name">{{ prenom }}</div>
         </div>
 
-        <!-- Le bouton appelle une alerte de confirmation lors du clic -->
-        <a href="/telecharger-pdf/{{ nom }} {{ prenom }}.pdf" class="download-pdf-btn" onclick="confirmerTelechargement()">
+        <!-- Bouton modifié pour déclencher le téléchargement visible -->
+        <button class="download-pdf-btn" onclick="telechargerFichierVisible()">
             📄 Télécharger mon Attestation (Fichier PDF)
-        </a>
+        </button>
     </div>
 
     <script>
-        function confirmerTelechargement() {
-            // Affiche un message clair sur l'écran du téléphone pour rassurer l'utilisateur
-            setTimeout(function() {
-                alert("📥 Téléchargement lancé avec succès ! Votre attestation PDF a été enregistrée dans le dossier 'Téléchargements' de votre téléphone.");
-            }, 500);
+        function telechargerFichierVisible() {
+            // URL du fichier PDF basé sur le nom et prénom
+            const url = "/telecharger-pdf/{{ nom }} {{ prenom }}.pdf";
+            const nomFichier = "{{ nom }}_{{ prenom }}.pdf";
+
+            // Utilisation de fetch pour forcer le navigateur à gérer le téléchargement activement
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) throw new Error("Erreur lors du téléchargement");
+                    return response.blob();
+                })
+                .then(blob => {
+                    // Création d'un lien invisible pour forcer le gestionnaire d'Android à s'activer
+                    const blobUrl = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = blobUrl;
+                    a.download = nomFichier;
+                    document.body.appendChild(a);
+                    a.click(); // Déclenche le clic réel
+                    
+                    // Nettoyage et affichage de la notification système
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(blobUrl);
+                })
+                .catch(error => {
+                    // En cas d'erreur, redirection classique par sécurité
+                    window.location.href = url;
+                });
         }
     </script>
 
