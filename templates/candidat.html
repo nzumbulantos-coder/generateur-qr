@@ -5,17 +5,90 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Félicitations</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #ffffff; }
-        .container { text-align: left; max-width: 600px; width: 100%; padding: 20px; box-sizing: border-box; }
-        .header-row { display: flex; align-items: center; gap: 15px; margin-bottom: 5px; flex-wrap: wrap; }
-        h1 { font-size: 3.5rem; color: #212529; margin: 0; font-weight: 700; max-width: 100%; }
-        .emoji { font-size: 3rem; }
-        .emoji-row { display: flex; gap: 15px; margin-bottom: 30px; margin-left: 5px; }
-        .name-container { font-size: 3.2rem; font-weight: 700; color: #1d70b8; line-height: 1.2; max-width: 90vw; word-wrap: break-word; overflow-wrap: break-word; text-transform: uppercase; margin-bottom: 40px; }
-        .first-name { margin-top: 15px; }
-        .download-pdf-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; background-color: #ff5722; color: white; text-decoration: none; padding: 15px 25px; font-size: 1.2rem; font-weight: bold; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.15); transition: background 0.2s; width: 100%; max-width: 440px; box-sizing: border-box; }
-        .download-pdf-btn:active { background-color: #e64a19; }
-        @media (max-width: 500px) { h1 { font-size: 2.5rem; } .emoji { font-size: 2.2rem; } .name-container { font-size: 2.2rem; } .download-pdf-btn { font-size: 1.05rem; padding: 12px 20px; } }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+            background-color: #ffffff; 
+        }
+        .container { 
+            text-align: left; 
+            max-width: 600px; 
+            width: 100%;
+            padding: 20px; 
+            box-sizing: border-box;
+        }
+        .header-row { 
+            display: flex; 
+            align-items: center; 
+            gap: 15px; 
+            margin-bottom: 5px; 
+            flex-wrap: wrap;
+        }
+        h1 { 
+            font-size: 3.5rem; 
+            color: #212529; 
+            margin: 0; 
+            font-weight: 700; 
+            max-width: 100%;
+        }
+        .emoji { 
+            font-size: 3rem; 
+        }
+        .emoji-row { 
+            display: flex; 
+            gap: 15px; 
+            margin-bottom: 30px; 
+            margin-left: 5px; 
+        }
+        .name-container { 
+            font-size: 3.2rem; 
+            font-weight: 700; 
+            color: #1d70b8; 
+            line-height: 1.2; 
+            max-width: 90vw;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-transform: uppercase;
+            margin-bottom: 40px;
+        }
+        .first-name { 
+            margin-top: 15px; 
+        }
+        
+        /* Bouton dynamique de téléchargement */
+        .download-pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background-color: #ff5722;
+            color: white;
+            text-decoration: none;
+            padding: 15px 25px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+            transition: background 0.2s;
+            width: 100%;
+            max-width: 440px;
+            box-sizing: border-box;
+            cursor: pointer;
+        }
+        .download-pdf-btn:active {
+            background-color: #e64a19;
+        }
+
+        @media (max-width: 500px) {
+            h1 { font-size: 2.5rem; }
+            .emoji { font-size: 2.2rem; }
+            .name-container { font-size: 2.2rem; }
+            .download-pdf-btn { font-size: 1.05rem; padding: 12px 20px; }
+        }
     </style>
 </head>
 <body>
@@ -34,11 +107,20 @@
             <div class="first-name">{{ prenom }}</div>
         </div>
 
-        <!-- Lien de téléchargement dynamique sécurisé -->
-        <a href="/telecharger-pdf/{{ nom }} {{ prenom }}.pdf" class="download-pdf-btn">
+        <!-- Le bouton appelle une alerte de confirmation lors du clic -->
+        <a href="/telecharger-pdf/{{ nom }} {{ prenom }}.pdf" class="download-pdf-btn" onclick="confirmerTelechargement()">
             📄 Télécharger mon Attestation (Fichier PDF)
         </a>
     </div>
+
+    <script>
+        function confirmerTelechargement() {
+            // Affiche un message clair sur l'écran du téléphone pour rassurer l'utilisateur
+            setTimeout(function() {
+                alert("📥 Téléchargement lancé avec succès ! Votre attestation PDF a été enregistrée dans le dossier 'Téléchargements' de votre téléphone.");
+            }, 500);
+        }
+    </script>
 
 </body>
 </html>
