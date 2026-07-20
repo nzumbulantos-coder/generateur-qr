@@ -59,7 +59,7 @@
             margin-top: 15px; 
         }
         
-        /* Bouton dynamique de téléchargement */
+        /* Bouton d'origine */
         .download-pdf-btn {
             display: inline-flex;
             align-items: center;
@@ -107,8 +107,8 @@
             <div class="first-name">{{ prenom }}</div>
         </div>
 
-        <!-- Correction majeure : utilisation de l'attribut download natif -->
-        <a href="/telecharger-pdf/{{ nom }} {{ prenom }}.pdf" class="download-pdf-btn" download="{{ nom }}_{{ prenom }}.pdf">
+        <!-- Bouton initial utilisant la route directe d'origine -->
+        <a href="/telecharger-pdf/{{ nom }} {{ prenom }}.pdf" class="download-pdf-btn" download>
             📄 Télécharger mon Attestation (Fichier PDF)
         </a>
     </div>
