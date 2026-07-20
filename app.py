@@ -3,6 +3,7 @@ import os
 import qrcode
 import io
 import base64
+import urllib.parse  # Permet de supprimer définitivement les %20
 
 app = Flask(__name__)
 
@@ -11,10 +12,7 @@ PDF_FOLDER = os.path.join(os.getcwd(), "attestations")
 
 @app.route('/', methods=['GET', 'POST'])
 def generateur_qr():
-    """
-    Gère le formulaire.html et génère un QR code avec un chemin dynamique 
-    qui s'adapte automatiquement à votre vrai site web actuel.
-    """
+    """Gère le formulaire et génère le QR code dynamique."""
     qr_base64 = None
     nom_complet = ""
 
@@ -23,17 +21,15 @@ def generateur_qr():
         prenom = request.form.get('prenom', '').strip()
         nom_complet = f"{nom} {prenom}"
 
-        # Détection dynamique du domaine (Vercel ou local) pour éviter l'erreur 404
         domaine_actuel = request.host
+        # Utilisation de la méthode sécurisée de Flask pour passer les variables sans casser l'URL
         lien_candidat = f"https://{domaine_actuel}/candidat/{nom}/{prenom}"
 
-        # Génération de l'image du QR Code
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
         qr.add_data(lien_candidat)
         qr.make(fit=True)
         img = qr.make_image(fill_color="black", back_color="white")
 
-        # Encodage en base64 pour l'affichage HTML
         buffer = io.BytesIO()
         img.save(buffer, format="PNG")
         qr_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
@@ -43,20 +39,28 @@ def generateur_qr():
 
 @app.route('/candidat/<nom>/<prenom>')
 def profil_candidat(nom, prenom):
-    """Affiche la page de félicitations du candidat."""
-    return render_template('candidat.html', nom=nom, prenom=prenom)
+    """Affiche la page de félicitations en nettoyant le %20 pour l'affichage visuel."""
+    # Décodage des caractères URL pour l'affichage propre à l'écran
+    nom_propre = urllib.parse.unquote(nom)
+    prenom_propre = urllib.parse.unquote(prenom)
+    return render_template('candidat.html', nom=nom_propre, prenom=prenom_propre)
 
 
 @app.route('/telecharger-pdf/<nom_complet>')
 def telecharger_pdf(nom_complet):
-    """Télécharge directement le fichier PDF associé au candidat."""
-    pdf_path = os.path.join(PDF_FOLDER, nom_complet)
+    """Télécharge le fichier en nettoyant le nom pour éviter le Not Found."""
+    # Transformation de "ASELE%20LIKAKA" en "ASELE LIKAKA"
+    nom_fichier_propre = urllib.parse.unquote(nom_complet)
     
+    # Recherche dans le dossier des attestations
+    pdf_path = os.path.join(PDF_FOLDER, nom_fichier_propre)
+    
+    # Recherche de secours dans le dossier static
     if not os.path.exists(pdf_path):
-        pdf_path = os.path.join(os.getcwd(), "static", nom_complet)
+        pdf_path = os.path.join(os.getcwd(), "static", nom_fichier_propre)
 
     if not os.path.exists(pdf_path):
-        return f"Erreur 404 : Le fichier '{nom_complet}' est introuvable.", 404
+        return f"Erreur 404 : Le fichier '{nom_fichier_propre}' reste introuvable sur le serveur.", 404
 
     return send_file(pdf_path, as_attachment=True)
 
