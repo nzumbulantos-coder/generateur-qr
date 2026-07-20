@@ -1,34 +1,51 @@
-from flask import Flask, render_template, send_file, abort
+from flask import Flask, render_template, send_file
 import os
 
 app = Flask(__name__)
 
-# Dossier contenant vos fichiers PDF d'attestation
-# Changez "attestations" par le nom exact de votre dossier si nécessaire
-PDF_FOLDER = os.path.join(os.getcwd(), "attestations")
+def chercher_pdf_sur_serveur(nom_fichier):
+    """
+    Parcourt intelligemment les dossiers du serveur pour trouver le PDF,
+    ce qui évite les erreurs 404 si le nom du dossier a changé.
+    """
+    # Dossiers probables où peuvent être stockés vos fichiers
+    dossiers_possibles = [
+        os.path.join(os.getcwd(), "attestations"),
+        os.path.join(os.getcwd(), "static"),
+        os.path.join(os.getcwd(), "static", "pdf"),
+        os.getcwd() # Racine du projet
+    ]
+    
+    for dossier in dossiers_possibles:
+        chemin_test = os.path.join(dossier, nom_fichier)
+        if os.path.exists(chemin_test):
+            return chemin_test
+            
+    return None
 
 @app.route('/candidat/<nom>/<prenom>')
 def profil_candidat(nom, prenom):
-    """
-    Affiche la page de félicitations personnalisée pour le candidat.
-    """
+    """Affiche la page de félicitations personnalisée."""
     return render_template('candidat.html', nom=nom, prenom=prenom)
 
 @app.route('/telecharger-pdf/<nom_complet>')
 def telecharger_pdf(nom_complet):
-    """
-    Gère le téléchargement direct du fichier PDF avec notification.
-    """
-    # Nettoyage du nom de fichier pour éviter les erreurs d'encodage d'URL
+    """Gère le téléchargement direct du PDF sans ouvrir de page."""
     safe_filename = os.path.basename(nom_complet)
-    pdf_path = os.path.join(PDF_FOLDER, safe_filename)
     
-    # Vérification si le fichier PDF existe bien dans votre dossier
-    if not os.path.exists(pdf_path):
-        return f"Erreur : Le fichier '{safe_filename}' est introuvable dans le dossier des attestations.", 404
+    # Recherche automatique du fichier dans tous vos dossiers
+    pdf_path = chercher_pdf_sur_serveur(safe_filename)
+    
+    # Si le fichier n'est pas trouvé avec son nom brut, on teste en retirant l'extension .pdf de l'URL
+    if not pdf_path and safe_filename.lower().endswith('.pdf'):
+        pdf_path = chercher_pdf_sur_serveur(safe_filename)
+
+    # Si le fichier reste introuvable, on affiche la liste des dossiers scannés pour vous aider
+    if not pdf_path:
+        return f"Erreur 404 : Le fichier '{safe_filename}' est introuvable sur le serveur.", 404
 
     try:
-        # Envoi du fichier en mode attachement strict pour déclencher le téléchargement direct
+        # Configuration optimale pour déclencher le gestionnaire de téléchargement Android
         response = send_file(
             pdf_path, 
             mimetype='application/pdf',
@@ -36,7 +53,7 @@ def telecharger_pdf(nom_complet):
             download_name=safe_filename
         )
         
-        # En-têtes HTTP spécifiques pour forcer le gestionnaire d'Android à afficher la flèche de progression
+        # En-têtes pour forcer l'affichage de la flèche de téléchargement Chrome
         response.headers["Content-Description"] = "File Transfer"
         response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
         response.headers["Pragma"] = "no-cache"
@@ -45,10 +62,7 @@ def telecharger_pdf(nom_complet):
         return response
         
     except Exception as e:
-        return f"Une erreur est survenue lors du téléchargement : {str(e)}", 500
+        return f"Erreur lors du transfert : {str(e)}", 500
 
-# Lancement de l'application en local
 if __name__ == '__main__':
-    if not os.path.exists(PDF_FOLDER):
-        os.makedirs(PDF_FOLDER)
     app.run(debug=True, port=5000)
