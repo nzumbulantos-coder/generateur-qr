@@ -59,7 +59,7 @@
             margin-top: 15px; 
         }
         
-        /* Bouton dynamique de téléchargement */
+        /* Bouton de téléchargement natif */
         .download-pdf-btn {
             display: inline-flex;
             align-items: center;
@@ -77,7 +77,6 @@
             width: 100%;
             max-width: 440px;
             box-sizing: border-box;
-            border: none;
             cursor: pointer;
         }
         .download-pdf-btn:active {
@@ -108,43 +107,11 @@
             <div class="first-name">{{ prenom }}</div>
         </div>
 
-        <!-- Bouton modifié pour déclencher le téléchargement visible -->
-        <button class="download-pdf-btn" onclick="telechargerFichierVisible()">
+        <!-- Bouton standard qui utilise le comportement natif de Chrome -->
+        <a href="/telecharger-pdf/{{ nom }} {{ prenom }}.pdf" class="download-pdf-btn" download>
             📄 Télécharger mon Attestation (Fichier PDF)
-        </button>
+        </a>
     </div>
-
-    <script>
-        function telechargerFichierVisible() {
-            // URL du fichier PDF basé sur le nom et prénom
-            const url = "/telecharger-pdf/{{ nom }} {{ prenom }}.pdf";
-            const nomFichier = "{{ nom }}_{{ prenom }}.pdf";
-
-            // Utilisation de fetch pour forcer le navigateur à gérer le téléchargement activement
-            fetch(url)
-                .then(response => {
-                    if (!response.ok) throw new Error("Erreur lors du téléchargement");
-                    return response.blob();
-                })
-                .then(blob => {
-                    // Création d'un lien invisible pour forcer le gestionnaire d'Android à s'activer
-                    const blobUrl = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = blobUrl;
-                    a.download = nomFichier;
-                    document.body.appendChild(a);
-                    a.click(); // Déclenche le clic réel
-                    
-                    // Nettoyage et affichage de la notification système
-                    document.body.removeChild(a);
-                    window.URL.revokeObjectURL(blobUrl);
-                })
-                .catch(error => {
-                    // En cas d'erreur, redirection classique par sécurité
-                    window.location.href = url;
-                });
-        }
-    </script>
 
 </body>
 </html>
