@@ -6,29 +6,26 @@ import base64
 
 app = Flask(__name__)
 
-# CONFIGURATION : Mettez ici l'adresse exacte de votre site sur Vercel
-VOTRE_DOMAINE_VERCEL = "qr-5txl.vercel.app"
-
 # Configuration du dossier des fichiers PDF
 PDF_FOLDER = os.path.join(os.getcwd(), "attestations")
 
 @app.route('/', methods=['GET', 'POST'])
 def generateur_qr():
     """
-    Gère l'affichage et la soumission du fichier 'formulaire.html'
-    pour créer les nouveaux candidats sans bousiller l'URL.
+    Gère le formulaire.html et génère un QR code avec un chemin dynamique 
+    qui s'adapte automatiquement à votre vrai site web actuel.
     """
     qr_base64 = None
     nom_complet = ""
 
     if request.method == 'POST':
-        # Récupération et nettoyage strict des données reçues du formulaire
         nom = request.form.get('nom', '').strip()
         prenom = request.form.get('prenom', '').strip()
         nom_complet = f"{nom} {prenom}"
 
-        # CONSTRUCTION DU LIEN PARFAIT (Sans cryptage bizarre ni caractères parasites)
-        lien_candidat = f"https://{VOTRE_DOMAINE_VERCEL}/candidat/{nom}/{prenom}"
+        # Détection dynamique du domaine (Vercel ou local) pour éviter l'erreur 404
+        domaine_actuel = request.host
+        lien_candidat = f"https://{domaine_actuel}/candidat/{nom}/{prenom}"
 
         # Génération de l'image du QR Code
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
@@ -36,7 +33,7 @@ def generateur_qr():
         qr.make(fit=True)
         img = qr.make_image(fill_color="black", back_color="white")
 
-        # Conversion de l'image en texte Base64 pour l'afficher dans formulaire.html
+        # Encodage en base64 pour l'affichage HTML
         buffer = io.BytesIO()
         img.save(buffer, format="PNG")
         qr_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
@@ -46,20 +43,15 @@ def generateur_qr():
 
 @app.route('/candidat/<nom>/<prenom>')
 def profil_candidat(nom, prenom):
-    """
-    Affiche la page de félicitations ('candidat.html') pour le candidat.
-    """
+    """Affiche la page de félicitations du candidat."""
     return render_template('candidat.html', nom=nom, prenom=prenom)
 
 
 @app.route('/telecharger-pdf/<nom_complet>')
 def telecharger_pdf(nom_complet):
-    """
-    Télécharge directement le fichier PDF d'origine du candidat.
-    """
+    """Télécharge directement le fichier PDF associé au candidat."""
     pdf_path = os.path.join(PDF_FOLDER, nom_complet)
     
-    # Recherche de secours dans le dossier static si nécessaire
     if not os.path.exists(pdf_path):
         pdf_path = os.path.join(os.getcwd(), "static", nom_complet)
 
