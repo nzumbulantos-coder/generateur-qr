@@ -3,11 +3,11 @@ import os
 import qrcode
 import io
 import base64
-import urllib.parse  # Permet de supprimer définitivement les %20
+import urllib.parse
 
 app = Flask(__name__)
 
-# Configuration du dossier des fichiers PDF
+# Configuration du dossier contenant vos fichiers PDF
 PDF_FOLDER = os.path.join(os.getcwd(), "attestations")
 
 @app.route('/', methods=['GET', 'POST'])
@@ -22,7 +22,7 @@ def generateur_qr():
         nom_complet = f"{nom} {prenom}"
 
         domaine_actuel = request.host
-        # Utilisation de la méthode sécurisée de Flask pour passer les variables sans casser l'URL
+        # Conservation du nouveau format propre pour les futurs scans
         lien_candidat = f"https://{domaine_actuel}/candidat/{nom}/{prenom}"
 
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
@@ -37,30 +37,64 @@ def generateur_qr():
     return render_template('formulaire.html', qr_base64=qr_base64, nom_complet=nom_complet)
 
 
+# =========================================================================
+# ROUTE 1 : COMPATIBILITÉ ANCIENS QR CODES (/candidat?n=...&p=...)
+# =========================================================================
+@app.route('/candidat')
+def profil_candidat_ancien():
+    """
+    Intercepte le format exact de vos anciens QR codes.
+    Décode automatiquement le Base64 pour retrouver le nom et le prénom réels.
+    """
+    n_encode = request.args.get('n', '')
+    p_encode = request.args.get('p', '')
+
+    nom_decode = ""
+    prenom_decode = ""
+
+    # Décodage sécurisé du format Base64 d'origine
+    try:
+        if n_encode:
+            nom_decode = base64.b64decode(n_encode).decode('utf-8').strip()
+        if p_encode:
+            prenom_decode = base64.b64decode(p_encode).decode('utf-8').strip()
+    except Exception:
+        # Si ce n'était pas du Base64, on récupère le texte brut par sécurité
+        nom_decode = n_encode
+        prenom_decode = p_encode
+
+    return render_template('candidat.html', nom=nom_decode, prenom=prenom_decode)
+
+
+# =========================================================================
+# ROUTE 2 : NOUVEAUX CANDIDATS (/candidat/NOM/PRENOM)
+# =========================================================================
 @app.route('/candidat/<nom>/<prenom>')
-def profil_candidat(nom, prenom):
-    """Affiche la page de félicitations en nettoyant le %20 pour l'affichage visuel."""
-    # Décodage des caractères URL pour l'affichage propre à l'écran
+def profil_candidat_nouveau(nom, prenom):
+    """Affiche la page pour les nouveaux liens générés."""
     nom_propre = urllib.parse.unquote(nom)
     prenom_propre = urllib.parse.unquote(prenom)
     return render_template('candidat.html', nom=nom_propre, prenom=prenom_propre)
 
 
+# =========================================================================
+# TÉLÉCHARGEMENT UNIVERSEL DU PDF
+# =========================================================================
 @app.route('/telecharger-pdf/<nom_complet>')
 def telecharger_pdf(nom_complet):
-    """Télécharge le fichier en nettoyant le nom pour éviter le Not Found."""
-    # Transformation de "ASELE%20LIKAKA" en "ASELE LIKAKA"
+    """Télécharge le fichier en gérant les espaces et l'extension."""
     nom_fichier_propre = urllib.parse.unquote(nom_complet)
     
-    # Recherche dans le dossier des attestations
+    if not nom_fichier_propre.lower().endswith('.pdf'):
+        nom_fichier_propre = f"{nom_fichier_propre}.pdf"
+        
     pdf_path = os.path.join(PDF_FOLDER, nom_fichier_propre)
     
-    # Recherche de secours dans le dossier static
     if not os.path.exists(pdf_path):
         pdf_path = os.path.join(os.getcwd(), "static", nom_fichier_propre)
 
     if not os.path.exists(pdf_path):
-        return f"Erreur 404 : Le fichier '{nom_fichier_propre}' reste introuvable sur le serveur.", 404
+        return f"Erreur 404 : Le fichier PDF '{nom_fichier_propre}' reste introuvable sur le serveur.", 404
 
     return send_file(pdf_path, as_attachment=True)
 
