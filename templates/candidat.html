@@ -59,7 +59,7 @@
             margin-top: 15px; 
         }
         
-        /* Bouton de téléchargement natif */
+        /* Bouton de téléchargement */
         .download-pdf-btn {
             display: inline-flex;
             align-items: center;
@@ -77,6 +77,7 @@
             width: 100%;
             max-width: 440px;
             box-sizing: border-box;
+            border: none;
             cursor: pointer;
         }
         .download-pdf-btn:active {
@@ -107,11 +108,44 @@
             <div class="first-name">{{ prenom }}</div>
         </div>
 
-        <!-- Bouton standard qui utilise le comportement natif de Chrome -->
-        <a href="/telecharger-pdf/{{ nom }} {{ prenom }}.pdf" class="download-pdf-btn" download>
+        <!-- Le bouton appelle le script JavaScript au clic -->
+        <button class="download-pdf-btn" onclick="declencherTelechargementForce()">
             📄 Télécharger mon Attestation (Fichier PDF)
-        </a>
+        </button>
     </div>
+
+    <script>
+        function declencherTelechargementForce() {
+            const url = "/telecharger-pdf/{{ nom }} {{ prenom }}.pdf";
+            const nomFichier = "{{ nom }} {{ prenom }}.pdf";
+
+            // Utilisation d'une requête Fetch pour forcer le gestionnaire de Chrome à réagir
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) throw new Error("Fichier non trouvé");
+                    return response.blob();
+                })
+                .then(blob => {
+                    // Création d'un lien de téléchargement virtuel
+                    const blobUrl = window.URL.createObjectURL(blob);
+                    const lienVirtuel = document.createElement('a');
+                    lienVirtuel.href = blobUrl;
+                    lienVirtuel.download = nomFichier;
+                    
+                    // On l'ajoute au document pour simuler une action utilisateur physique
+                    document.body.appendChild(lienVirtuel);
+                    lienVirtuel.click();
+                    
+                    // Nettoyage de la mémoire après le déclenchement de la notification Android
+                    document.body.removeChild(lienVirtuel);
+                    window.URL.revokeObjectURL(blobUrl);
+                })
+                .catch(error => {
+                    // En cas d'échec du script, comportement de secours classique
+                    window.location.href = url;
+                });
+        }
+    </script>
 
 </body>
 </html>
