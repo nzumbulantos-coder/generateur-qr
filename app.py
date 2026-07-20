@@ -22,7 +22,10 @@ def index():
         nom_encode = base64.b64encode(nom.encode('utf-8')).decode('utf-8')
         prenom_encode = base64.b64encode(prenom.encode('utf-8')).decode('utf-8')
         
-        lien_candidat = f"https://vercel.app{nom_encode}&p={prenom_encode}"
+        # CETTE LIGNE EST MAGIQUE : Elle détecte automatiquement l'adresse active (generateur-qr-5txl.vercel.app)
+        # sans risque de coupure ou d'erreur d'écriture !
+        host = request.host
+        lien_candidat = f"https://{host}/candidat?n={nom_encode}&p={prenom_encode}"
         
         # Génération du QR Code
         qr = qrcode.QRCode(version=1, box_size=10, border=5)
@@ -53,20 +56,16 @@ def afficher_candidat():
 # 3. Téléchargement intelligent (Compatible avec tous vos fichiers avec ou sans espaces/accents)
 @app.route('/telecharger-pdf/<path:filename>')
 def download_file(filename):
-    # 1. Décodage et nettoyage initial du nom demandé par le téléphone
     clean_filename = urllib.parse.unquote(filename).strip()
     clean_filename = clean_filename.replace('É', 'E')
     
-    # 2. On essaie d'abord de chercher le fichier tel quel (avec ses espaces normaux)
     try:
         return send_from_directory('static', clean_filename, as_attachment=True)
     except Exception:
-        # 3. Si le fichier avec espaces n'est pas trouvé, on tente la méthode sans aucun espace !
         try:
-            # On cherche dans le dossier static un fichier qui correspond en ignorant les espaces
             sans_espace_demande = clean_filename.replace(' ', '')
             for fichier_reel in os.listdir('static'):
-                if fichier_reel.replace(' ', '') == sans_espace_demande:
+                if fichier_reel.replace(' ', '').upper() == sans_espace_demande.upper():
                     return send_from_directory('static', fichier_reel, as_attachment=True)
             raise FileNotFoundError
         except Exception:
