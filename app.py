@@ -1,68 +1,63 @@
-from flask import Flask, render_template, send_file
-import os
+from flask import Flask, render_template, request, send_from_directory
+import qrcode
+import io
+import base64
+import urllib.parse
 
 app = Flask(__name__)
 
-def chercher_pdf_sur_serveur(nom_fichier):
-    """
-    Parcourt intelligemment les dossiers du serveur pour trouver le PDF,
-    ce qui évite les erreurs 404 si le nom du dossier a changé.
-    """
-    # Dossiers probables où peuvent être stockés vos fichiers
-    dossiers_possibles = [
-        os.path.join(os.getcwd(), "attestations"),
-        os.path.join(os.getcwd(), "static"),
-        os.path.join(os.getcwd(), "static", "pdf"),
-        os.getcwd() # Racine du projet
-    ]
+# 1. Page d'accueil : Formulaire simple
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    qr_base64 = None
+    nom_complet = None
     
-    for dossier in dossiers_possibles:
-        chemin_test = os.path.join(dossier, nom_fichier)
-        if os.path.exists(chemin_test):
-            return chemin_test
-            
-    return None
+    if request.method == 'POST':
+        nom = request.form['nom'].upper().strip()
+        prenom = request.form['prenom'].upper().strip()
+        nom_complet = f"{nom} {prenom}"
+        
+        # Encodage sécurisé des informations du candidat
+        nom_encode = base64.b64encode(nom.encode('utf-8')).decode('utf-8')
+        prenom_encode = base64.b64encode(prenom.encode('utf-8')).decode('utf-8')
+        
+        lien_candidat = f"https://vercel.app{nom_encode}&p={prenom_encode}"
+        
+        # Génération du QR Code
+        qr = qrcode.QRCode(version=1, box_size=10, border=5)
+        qr.add_data(lien_candidat)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        
+        buf = io.BytesIO()
+        img.save(buf, format='PNG')
+        qr_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
 
-@app.route('/candidat/<nom>/<prenom>')
-def profil_candidat(nom, prenom):
-    """Affiche la page de félicitations personnalisée."""
-    return render_template('candidat.html', nom=nom, prenom=prenom)
+    return render_template('formulaire.html', qr_base64=qr_base64, nom_complet=nom_complet)
 
-@app.route('/telecharger-pdf/<nom_complet>')
-def telecharger_pdf(nom_complet):
-    """Gère le téléchargement direct du PDF sans ouvrir de page."""
-    safe_filename = os.path.basename(nom_complet)
-    
-    # Recherche automatique du fichier dans tous vos dossiers
-    pdf_path = chercher_pdf_sur_serveur(safe_filename)
-    
-    # Si le fichier n'est pas trouvé avec son nom brut, on teste en retirant l'extension .pdf de l'URL
-    if not pdf_path and safe_filename.lower().endswith('.pdf'):
-        pdf_path = chercher_pdf_sur_serveur(safe_filename)
-
-    # Si le fichier reste introuvable, on affiche la liste des dossiers scannés pour vous aider
-    if not pdf_path:
-        return f"Erreur 404 : Le fichier '{safe_filename}' est introuvable sur le serveur.", 404
-
+# 2. Page affichée lors du scan du QR Code
+@app.route('/candidat')
+def afficher_candidat():
     try:
-        # Configuration optimale pour déclencher le gestionnaire de téléchargement Android
-        response = send_file(
-            pdf_path, 
-            mimetype='application/pdf',
-            as_attachment=True, 
-            download_name=safe_filename
-        )
+        nom_encode = request.args.get('n', '')
+        prenom_encode = request.args.get('p', '')
         
-        # En-têtes pour forcer l'affichage de la flèche de téléchargement Chrome
-        response.headers["Content-Description"] = "File Transfer"
-        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-        response.headers["Pragma"] = "no-cache"
-        response.headers["Expires"] = "0"
+        nom = base64.b64decode(nom_encode.encode('utf-8')).decode('utf-8')
+        prenom = base64.b64decode(prenom_encode.encode('utf-8')).decode('utf-8')
         
-        return response
-        
-    except Exception as e:
-        return f"Erreur lors du transfert : {str(e)}", 500
+        return render_template('candidat.html', nom=nom, prenom=prenom)
+    except Exception:
+        return "Informations du candidat invalides ou corrompues", 400
+
+# 3. Téléchargement intelligent (Nettoie les espaces internet pour trouver le PDF physique)
+@app.route('/telecharger-pdf/<path:filename>')
+def download_file(filename):
+    try:
+        # Décodage des caractères spéciaux internet (comme %20) en espaces normaux
+        clean_filename = urllib.parse.unquote(filename).strip()
+        return send_from_directory('static', clean_filename, as_attachment=True)
+    except Exception:
+        return "Le fichier d'attestation demandé est introuvable sur le serveur.", 404
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=8080)
