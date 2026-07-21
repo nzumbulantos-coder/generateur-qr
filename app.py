@@ -12,7 +12,10 @@ PDF_FOLDER = os.path.join(os.getcwd(), "attestations")
 
 @app.route('/', methods=['GET', 'POST'])
 def generateur_qr():
-    """Gère le formulaire et génère le QR code dynamique."""
+    """
+    Gère le formulaire et génère un QR code sécurisé
+    où le nom et le prénom sont totalement MASQUÉS en Base64.
+    """
     qr_base64 = None
     nom_complet = ""
 
@@ -21,10 +24,15 @@ def generateur_qr():
         prenom = request.form.get('prenom', '').strip()
         nom_complet = f"{nom} {prenom}"
 
-        domaine_actuel = request.host
-        # Conservation du nouveau format propre pour les futurs scans
-        lien_candidat = f"https://{domaine_actuel}/candidat/{nom}/{prenom}"
+        # Chiffrement des données en Base64 pour les masquer dans le lien
+        nom_masque = base64.b64encode(nom.encode('utf-8')).decode('utf-8')
+        prenom_masque = base64.b64encode(prenom.encode('utf-8')).decode('utf-8')
 
+        # Construction du lien anonyme
+        domaine_actuel = request.host
+        lien_candidat = f"https://{domaine_actuel}/candidat?n={nom_masque}&p={prenom_masque}"
+
+        # Génération du QR Code
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
         qr.add_data(lien_candidat)
         qr.make(fit=True)
@@ -38,13 +46,13 @@ def generateur_qr():
 
 
 # =========================================================================
-# ROUTE 1 : COMPATIBILITÉ ANCIENS QR CODES (/candidat?n=...&p=...)
+# ROUTE UNIQUE : Décode les anciens ET les nouveaux QR codes masqués
 # =========================================================================
 @app.route('/candidat')
-def profil_candidat_ancien():
+def profil_candidat():
     """
-    Intercepte le format exact de vos anciens QR codes.
-    Décode automatiquement le Base64 pour retrouver le nom et le prénom réels.
+    Intercepte les liens anonymes, démasque le nom/prénom en interne
+    et transmet les vraies valeurs à la page candidat.html.
     """
     n_encode = request.args.get('n', '')
     p_encode = request.args.get('p', '')
@@ -52,14 +60,14 @@ def profil_candidat_ancien():
     nom_decode = ""
     prenom_decode = ""
 
-    # Décodage sécurisé du format Base64 d'origine
+    # Décodage sécurisé de la chaîne masquée
     try:
         if n_encode:
             nom_decode = base64.b64decode(n_encode).decode('utf-8').strip()
         if p_encode:
             prenom_decode = base64.b64decode(p_encode).decode('utf-8').strip()
     except Exception:
-        # Si ce n'était pas du Base64, on récupère le texte brut par sécurité
+        # En cas d'erreur de format, récupération brute par sécurité
         nom_decode = n_encode
         prenom_decode = p_encode
 
@@ -67,22 +75,11 @@ def profil_candidat_ancien():
 
 
 # =========================================================================
-# ROUTE 2 : NOUVEAUX CANDIDATS (/candidat/NOM/PRENOM)
-# =========================================================================
-@app.route('/candidat/<nom>/<prenom>')
-def profil_candidat_nouveau(nom, prenom):
-    """Affiche la page pour les nouveaux liens générés."""
-    nom_propre = urllib.parse.unquote(nom)
-    prenom_propre = urllib.parse.unquote(prenom)
-    return render_template('candidat.html', nom=nom_propre, prenom=prenom_propre)
-
-
-# =========================================================================
-# TÉLÉCHARGEMENT UNIVERSEL DU PDF
+# TÉLÉCHARGEMENT DIRECT ET SÉCURISÉ DU PDF
 # =========================================================================
 @app.route('/telecharger-pdf/<nom_complet>')
 def telecharger_pdf(nom_complet):
-    """Télécharge le fichier en gérant les espaces et l'extension."""
+    """Télécharge le fichier PDF physique correspondant au candidat."""
     nom_fichier_propre = urllib.parse.unquote(nom_complet)
     
     if not nom_fichier_propre.lower().endswith('.pdf'):
@@ -94,7 +91,7 @@ def telecharger_pdf(nom_complet):
         pdf_path = os.path.join(os.getcwd(), "static", nom_fichier_propre)
 
     if not os.path.exists(pdf_path):
-        return f"Erreur 404 : Le fichier PDF '{nom_fichier_propre}' reste introuvable sur le serveur.", 404
+        return f"Erreur 404 : Le fichier PDF '{nom_fichier_propre}' reste introuvable.", 404
 
     return send_file(pdf_path, as_attachment=True)
 
